@@ -1,4 +1,8 @@
 import SocketServer
+import os
+import sys
+
+# Copyright 2014 Remco Uittenbogerd
 # coding: utf-8
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
@@ -29,10 +33,45 @@ import SocketServer
 
 class MyWebServer(SocketServer.BaseRequestHandler):
     
+    def return_file_or_404(self, filePath):
+        try:
+            file = open(os.getcwd() + "/" + "www" + filePath, 'r')
+            data = file.read()
+            file.close()
+            
+            dataType = filePath.split(".")[-1]
+            self.return_data(data, dataType)
+        except IOError as error:
+            print( "IOError: " + error.strerror + "\n" )
+            self.return_404()
+        
+    def return_404(self, additionalInfo=""):
+        if( additionalInfo ):
+            additionalInfo = "\r\n\r\n" + additionalInfo +  "\r\n\r\n"
+            
+        self.request.sendall("HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html; charset=" + sys.getdefaultencoding() + additionalInfo)
+        
+    def return_data(self, data, dataType):
+        self.request.sendall("HTTP/1.1 200 OK\r\nContent-Type: text/" + dataType + "; charset=" + sys.getdefaultencoding() + "\r\n\r\n" + data)
+    
     def handle(self):
-        self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall("OK")
+        data = self.request.recv(1024).strip()
+        print( "Request: " + data + "\n\n")
+        split = data.split("\r\n")
+        filePath = split[0].split(" ")[1]
+        
+        if( filePath.endswith("/") ):
+            filePath += "index.html"
+            
+        # Prevent it from looking for files like "favicon.ico" when accessing through a web browser
+        # Also we only want to serve html and css files.
+        if( not ( filePath.endswith(".html") or filePath.endswith(".css") ) ):
+            self.return_404("We only return html and css files!")
+            
+        if( filePath.find("..") != -1 ): # They are attempting directory traversal!
+            self.return_404("We do not support '..' characters in the url")
+        else:
+            self.return_file_or_404(filePath)
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
