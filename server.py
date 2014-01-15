@@ -55,7 +55,6 @@ class MyWebServer(SocketServer.BaseRequestHandler):
     
     def handle(self):
         data = self.request.recv(1024).strip()
-        print( "Request: " + data + "\n\n")
         split = data.split("\r\n")
         
         if( len(split) == 0 ):
@@ -77,10 +76,22 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         if( not ( filePath.endswith(".html") or filePath.endswith(".css") ) ):
             self.return_404("We only return html and css files!")
             
-        if( filePath.find("..") != -1 ): # They are attempting directory traversal!
-            self.return_404("We do not support '..' characters in the url")
-        else:
-            self.return_file_or_404(filePath)
+        if not self.valid_path(filePath):
+            self.return_404("Permission Denied")
+            return
+
+        self.return_file_or_404(filePath)
+
+    def valid_path(self, path):
+        depth = 0
+        split = path.split("/")
+        for part in split:
+            if( part == ".." ):
+                depth -= 1
+            else:
+                depth += 1
+
+        return depth - 1 >= 0
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
