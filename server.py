@@ -41,7 +41,6 @@ class MyWebServer(SocketServer.BaseRequestHandler):
             dataType = filePath.split(".")[-1]
             self.return_data(data, dataType)
         except IOError as error:
-            print( "IOError: " + error.strerror + "\n" )
             self.return_404()
         
     def return_404(self, additionalInfo=""):
