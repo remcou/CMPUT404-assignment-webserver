@@ -1,10 +1,9 @@
+# coding: utf-8
+
 import SocketServer
-import os
 import sys
 
 # Copyright 2014 Remco Uittenbogerd
-# coding: utf-8
-
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +34,7 @@ class MyWebServer(SocketServer.BaseRequestHandler):
     
     def return_file_or_404(self, filePath):
         try:
-            file = open(os.getcwd() + "/" + "www" + filePath, 'r')
+            file = open("www" + filePath, 'r')
             data = file.read()
             file.close()
             
@@ -58,7 +57,17 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         data = self.request.recv(1024).strip()
         print( "Request: " + data + "\n\n")
         split = data.split("\r\n")
-        filePath = split[0].split(" ")[1]
+        
+        if( len(split) == 0 ):
+            return_404("Error: Invalid request format")
+            return
+            
+        split = split[0].split(" ")
+        if( len(split) < 2 ):
+            return_404("Error: Invalid request format")
+            return
+        
+        filePath = split[1]
         
         if( filePath.endswith("/") ):
             filePath += "index.html"
