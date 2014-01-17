@@ -90,7 +90,6 @@ class MyWebServer(SocketServer.BaseRequestHandler):
     def valid_path(self, path):
         depth = 0
         split = path.split("/")
-        print( "Split: " + str(split) )
         for part in split:
             if( part == ".." ):
                 depth -= 1
