@@ -2,6 +2,7 @@
 
 import SocketServer
 import sys
+import os
 
 # Copyright 2014 Remco Uittenbogerd
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
@@ -33,15 +34,17 @@ import sys
 class MyWebServer(SocketServer.BaseRequestHandler):
     
     def return_file_or_404(self, filePath):
-        try:
-            file = open("www" + filePath, 'r')
-            data = file.read()
-            file.close()
-            
-            dataType = filePath.split(".")[-1]
-            self.return_data(data, dataType)
-        except IOError as error:
+        
+        if( not os.path.isfile( filePath ) ):
             self.return_404()
+            return
+        
+        file = open(filePath, 'r')
+        data = file.read()
+        file.close()
+            
+        dataType = filePath.split(".")[-1]
+        self.return_data(data, dataType)
         
     def return_404(self, additionalInfo=""):
         if( additionalInfo ):
@@ -54,20 +57,23 @@ class MyWebServer(SocketServer.BaseRequestHandler):
     
     def handle(self):
         data = self.request.recv(1024).strip()
+        print("Request: " + data)
         split = data.split("\r\n")
         
         if( len(split) == 0 ):
-            return_404("Error: Invalid request format")
+            self.return_404("Error: Invalid request format")
             return
             
         split = split[0].split(" ")
         if( len(split) < 2 ):
-            return_404("Error: Invalid request format")
+            self.return_404("Error: Invalid request format")
             return
         
-        filePath = split[1]
+        filePath = "www" + split[1]
         
-        if( filePath.endswith("/") ):
+        if( os.path.isdir( filePath ) ):
+            if( not filePath.endswith("/") ):
+                filePath += "/"
             filePath += "index.html"
             
         # Prevent it from looking for files like "favicon.ico" when accessing through a web browser
