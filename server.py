@@ -36,7 +36,7 @@ class MyWebServer(SocketServer.BaseRequestHandler):
     def return_file_or_404(self, filePath):
         
         if( not os.path.isfile( filePath ) ):
-            self.return_404()
+            self.return_404("File does not exist!")
             return
         
         file = open(filePath, 'r')
@@ -57,7 +57,6 @@ class MyWebServer(SocketServer.BaseRequestHandler):
     
     def handle(self):
         data = self.request.recv(1024).strip()
-        print("Request: " + data)
         split = data.split("\r\n")
         
         if( len(split) == 0 ):
@@ -80,6 +79,7 @@ class MyWebServer(SocketServer.BaseRequestHandler):
         # Also we only want to serve html and css files.
         if( not ( filePath.endswith(".html") or filePath.endswith(".css") ) ):
             self.return_404("We only return html and css files!")
+            return
             
         if not self.valid_path(filePath):
             self.return_404("Permission Denied")
@@ -90,13 +90,14 @@ class MyWebServer(SocketServer.BaseRequestHandler):
     def valid_path(self, path):
         depth = 0
         split = path.split("/")
+        print( "Split: " + str(split) )
         for part in split:
             if( part == ".." ):
                 depth -= 1
             else:
                 depth += 1
 
-        return depth - 1 >= 0
+        return depth - 2 >= 0
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
